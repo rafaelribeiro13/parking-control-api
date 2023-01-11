@@ -11,9 +11,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.springframework.hateoas.RepresentationModel;
+
 @Entity
 @Table(name = "TB_PARKING_SPOT")
-public class ParkingSpotModel implements Serializable {
+public class ParkingSpotModel extends RepresentationModel<ParkingSpotModel> implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	

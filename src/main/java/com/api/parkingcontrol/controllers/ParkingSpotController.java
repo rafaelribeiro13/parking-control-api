@@ -1,5 +1,8 @@
 package com.api.parkingcontrol.controllers;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -61,7 +65,16 @@ public class ParkingSpotController {
 	
 	@GetMapping("/get-all")
 	public ResponseEntity<Page<ParkingSpotModel>> getAllParkingSpots(@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-		return ResponseEntity.status(HttpStatus.OK).body(parkingSpotService.findAll(pageable));
+		
+		Page<ParkingSpotModel> list = parkingSpotService.findAll(pageable);
+		if (!list.isEmpty()) {
+			for (ParkingSpotModel item : list) {
+				UUID id = item.getId();
+				item.add(linkTo(methodOn(ParkingSpotController.class).getOneParkingSpot(id)).withSelfRel());
+			}
+		}
+		
+		return ResponseEntity.status(HttpStatus.OK).body(list);
 	}
 	
 	@GetMapping("/get-one/{id}")
@@ -71,7 +84,14 @@ public class ParkingSpotController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Parking Spot not found.");
 		}
 		
-		return ResponseEntity.status(HttpStatus.OK).body(parkingSpotModelOptional.get());
+		Link link = linkTo(methodOn(ParkingSpotController.class)
+				.getAllParkingSpots(Pageable.unpaged())).withRel("Parking Spot List");
+		
+		
+		ParkingSpotModel parkingSpot = parkingSpotModelOptional.get();
+		parkingSpot.add(link);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(parkingSpot);
 	}
 	
 	@DeleteMapping("/delete/{id}")
